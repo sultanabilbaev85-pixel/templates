@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>IME Messenger</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        body { margin: 0; font-family: sans-serif; display: flex; height: 100vh; background: #e6ebee; }
+        
+        /* Левая панель (Чаты и Каналы) */
+        .sidebar { width: 300px; background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 20px; background: #0088cc; color: white; font-weight: bold; }
+        .chat-list { flex: 1; overflow-y: auto; }
+        .chat-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; align-items: center; }
+        .chat-item:hover { background: #f5f5f5; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; background: #ccc; margin-right: 10px; }
+
+        /* Правая часть (Окно чата) */
+        .main-chat { flex: 1; display: flex; flex-direction: column; }
+        .chat-header { padding: 15px; background: white; border-bottom: 1px solid #ddd; font-weight: bold; }
+        .messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; }
+        
+        .message { max-width: 70%; padding: 10px; border-radius: 10px; margin-bottom: 10px; position: relative; }
+        .my-message { align-self: flex-end; background: #effdde; }
+        .other-message { align-self: flex-start; background: white; }
+
+        .input-area { padding: 15px; background: white; display: flex; gap: 10px; }
+        input[type="text"] { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 20px; outline: none; }
+        .btn-send { background: #0088cc; color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">IME Messenger</div>
+        <div class="chat-list" id="rooms">
+            <div class="chat-item"><strong>+ Создать канал</strong></div>
+            <div class="chat-item"><div class="avatar"></div> Общий чат</div>
+            <!-- Сюда будут добавляться новые чаты -->
+        </div>
+        <div style="padding: 10px;"><a href="/logout">Выйти</a></div>
+    </div>
+
+    <div class="main-chat">
+        <div class="chat-header" id="chat-title">Общий чат</div>
+        <div class="messages" id="messages">
+            <!-- Сообщения появятся здесь -->
+        </div>
+        <div class="input-area">
+            <button class="btn-send">+</button> <!-- Кнопка для фото -->
+            <input type="text" id="msg-input" placeholder="Написать сообщение...">
+            <button class="btn-send" onclick="send()">Отправить</button>
+        </div>
+    </div>
+
+    <script>
+        var socket = io();
+        var username = "{{ user.username }}";
+
+        function send() {
+            var input = document.getElementById('msg-input');
+            if (input.value) {
+                socket.emit('new_msg', {user: username, text: input.value});
+                input.value = '';
+            }
+        }
+
+        socket.on('show_msg', function(data) {
+            var div = document.createElement('div');
+            div.className = 'message ' + (data.user === username ? 'my-message' : 'other-message');
+            div.innerHTML = '<b>' + data.user + '</b><br>' + data.text;
+            document.getElementById('messages').appendChild(div);
+            document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+        });
+    </script>
+</body>
+</html>
